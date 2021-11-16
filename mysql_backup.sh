@@ -1,5 +1,4 @@
 #/bin/bash
-# Backups for bdd and upload folder backups in dorpbox
 # Create by = Leonardo
 # date = 16/11/2021
 
@@ -16,7 +15,9 @@ KEEP_BACKUPS_FOR=30
 
 ## delete backups old 30 days
 delete_old_backups() {
+    # delete old backups
     echo "Deleting $OUTPUT/*.sql.gz older than $KEEP_BACKUPS_FOR days"
+    # execut rm for old backups
     find $OUTPUT -type f -name "*.sql.gz" -mtime +$KEEP_BACKUPS_FOR -exec rm {} \;
 }
 
@@ -27,7 +28,9 @@ backup_databases() {
         # exclude schema mysql phpmyadmin
         if ! echo "$db" | grep -q "schema\|mysql\|phpmyadmin"; then
             echo "Dumping database: $db"
+            # extract bdd content
             mysqldump --force --opt --routines --user=$USER --password=$PASSWORD --databases $db >$OUTPUT/$TIMESTAMP.$db.sql
+            # compress content bdd
             gzip $OUTPUT/$TIMESTAMP.$db.sql
         fi
     done
@@ -37,12 +40,13 @@ backup_databases() {
 upload_backups() {
     # compress backups folder
     tar -cv $OUTPUT | gzip >backups.tar.gz
+    # upload folder
     ./dropbox_uploader.sh upload backups.tar.gz /backups
 }
 
 #==============================================================================
 # RUN SCRIPT
 #==============================================================================
-delete_old_backups >> logs/logs.$TIMESTAMP.txt
+delete_old_backups > logs/logs.$TIMESTAMP.txt
 backup_databases >> logs/logs.$TIMESTAMP.txt
 upload_backups >> logs/logs.$TIMESTAMP.txt
